@@ -39,7 +39,9 @@ function readPackages(input, parseRegex) {
       packages = _.merge(data.dependencies, data.devDependencies);
       deferred.resolve(packages);
     } else {
-
+      var regexForPackageField = /\"([\w\d-]*)\"\W*:\W\"(.[\d.]*)\"/gi;
+      var res = regexForPackageField.exec(data);
+      console.log(res);
     }
 
     deferred.resolve(packages);
