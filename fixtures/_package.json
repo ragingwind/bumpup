@@ -1,7 +1,11 @@
 {
   "name": "<%= _.slugify(appname) %>",
   "version": "0.0.0",
-  "dependencies": {},
+  "dependencies": {
+    "npm": "~2.1.18",
+    "glob": "4.3.5",
+    "npm-registry-client": "^5.0.0",
+  },
   "devDependencies": {
     "grunt": "~0.4.1",
     "grunt-contrib-copy": "~0.5.0",

@@ -23,7 +23,7 @@ function gatherPackage (packageName) {
   return deferred.promise;
 }
 
-function readPackages(input, parseRegex) {
+function readPackages(input, doRegex) {
   var deferred = q.defer();
 
   fs.readFile(path.resolve(input), function(err, data) {
@@ -32,16 +32,35 @@ function readPackages(input, parseRegex) {
       return;
     }
 
-    var packages;
+    try {
+      var packages = {
+        data: data,
+        deps: null,
+        raw: null
+      };
 
-    if (!parseRegex) {
-      data = JSON.parse(data);
-      packages = _.merge(data.dependencies, data.devDependencies);
-      deferred.resolve(packages);
-    } else {
-      var regexForPackageField = /\"([\w\d-]*)\"\W*:\W\"(.[\d.]*)\"/gi;
-      var res = regexForPackageField.exec(data);
-      console.log(res);
+      // make dependency list by json parsing or regexp execution
+      if (!doRegex) {
+        packages.raw = JSON.parse(data);
+        packages.deps = _.merge(packages.raw.dependencies, packages.raw.devDependencies);
+      } else {
+        var r = {
+          deps: /(devDependencies|dependencies)([^]*)},/gi,
+          pkg: /\"([\w\d-]*)\"\W*:\W\"(.[\d.]*)\"/gi
+        };
+
+        var deps = r.deps.exec(data);
+        var res;
+
+        packages.raw = [];
+
+        while ((res = r.pkg.exec(deps[0])) !== null) {
+          packages.raw.push(res[0]);
+        }
+        packages.deps = JSON.parse('{' + packages.raw.join(',') + '}');
+      }
+    } catch (e) {
+      deferred.reject(e);
     }
 
     deferred.resolve(packages);
@@ -54,19 +73,17 @@ module.exports = function (opts, cb) {
   readPackages(opts.input, opts.regex).then(function(packages) {
     var requests = [];
 
-    console.log(packages);
-    cb();
-    return;
-
-    packages.forEach(function(p) {
+    _.each(packages.deps, function(v, p) {
+      console.log(p, v);
       requests.push(gatherPackage(p));
     });
 
     q.all(requests).then(function(data) {
       console.log(data[0]);
-    });
-  }).catch(function(err) {
-    console.error(err);
-    cb();
-  });;
-};
+      cb();
+    }).catch(function(err) {
+      console.error(err);
+      cb();
+    });;
+  });
+}
