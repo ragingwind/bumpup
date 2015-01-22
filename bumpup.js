@@ -26,7 +26,7 @@ function gatherPackage (packageName) {
 function readPackages(input, parseRegex) {
   var deferred = q.defer();
 
-  fs.readFile(path.resolve(opts.input), function(err, data) {
+  fs.readFile(path.resolve(input), function(err, data) {
     if (err) {
       deferred.reject(err);
       return;
@@ -49,7 +49,7 @@ function readPackages(input, parseRegex) {
 }
 
 module.exports = function (opts, cb) {
-  readPackages(opts).then(function(packages) {
+  readPackages(opts.input, opts.regex).then(function(packages) {
     var requests = [];
 
     console.log(packages);

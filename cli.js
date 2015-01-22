@@ -22,7 +22,6 @@ if (args.input.length === 0) {
 
 bumpup({
   input: args.input[0],
-  interactive: args.flags['interactive'] || args.flags['i'],
-  regex: args.flags['regex'] || args.flags['x'],
-  output: args.flags['output'] || args.flags['o'],
+  regex: (args.flags['regex'] || args.flags['x']) ? true : false,
+  output: (args.flags['output'] || args.flags['o']) ? true : false
 });
