@@ -17,7 +17,7 @@
     "bumpup": "cli.js"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha --timeout 10000"
   },
   "files": [
     "index.js"
@@ -29,10 +29,12 @@
     "npm"
   ],
   "dependencies": {
+    "chalk": "^0.5.1",
     "lodash": "^2.4.1",
     "meow": "^2.1.0",
     "npm-registry-client": "^5.0.0",
-    "semver": "^4.2.0"
+    "semver": "^4.2.0",
+    "semver-diff": "^2.0.0"
   },
   "devDependencies": {
     "mocha": "^2.1.0"

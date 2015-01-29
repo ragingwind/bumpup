@@ -7,11 +7,12 @@ var bumpup = require('./bumpup');
 var args = meow({
   help: [
       'Usage',
-      '   bumpup <sources> [OPTIONS]',
+      '   bumpup package.json [OPTIONS]',
+      '   bumpup package.json --parse=regex'
       '',
       'Options',
-      '   --regex, -x: Read packages using regex patterns',
-      '   --output, -o: Output file name, Do not pass filename, if you want to file that has replaced versions'
+      '   --parse: Parse the package.json by `json` or `regex patter` `json` is default',
+      '   --output: Output file name, If no file name, the package.json will be overwrite'
   ].join('\n')
 });
 
@@ -22,6 +23,6 @@ if (args.input.length === 0) {
 
 bumpup({
   input: args.input[0],
-  regex: (args.flags['regex'] || args.flags['x']) ? true : false,
-  output: (args.flags['output'] || args.flags['o']) ? true : false
+  regex: args.flags['parse'] ===  'regex' ? true : false,
+  output: args.flags['output']
 });

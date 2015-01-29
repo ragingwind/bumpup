@@ -17,7 +17,7 @@ describe('bumpup', function(done) {
     });
   });
 
-  it('should return packages from yeoman package.json', function(done) {
+  it('should return packages from yeoman package.json template', function(done) {
     var opts = {
       input: './fixtures/_package.json',
       regex: true,
