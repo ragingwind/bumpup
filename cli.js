@@ -4,12 +4,15 @@
 
 var meow = require('meow');
 var bumpup = require('./bumpup');
+var inquirer = require("inquirer");
+var path = require('path');
+var fs = require('fs');
 var args = meow({
   help: [
       'Usage',
       '   bumpup package.json [OPTIONS]',
       '   bumpup package.json --regex --verbose',
-      '   bumpup package.json --output new-package.json'
+      '   bumpup package.json --output new-package.json',
       '',
       'Options',
       '   --regex: Specify how to parse the package.json by regex. if not set? reading by json is default',
@@ -23,4 +26,27 @@ if (args.input.length === 0) {
   eixt(-1);
 }
 
-bumpup(args.input[0], args.flags);
+bumpup(args.input[0], args.flags, function(err, packages) {
+  var outputFile = path.resolve(args.flags.output ? args.flags.output : args.input[0]);
+  var writePackageJson = function() {
+    fs.writeFileSync(outputFile, packages.output);
+  };
+
+  console.log('file', outputFile);
+  fs.exists(outputFile, function(exists) {
+    if (exists) {
+      inquirer.prompt({
+        type: 'confirm',
+        name: 'overwrite',
+        message: 'Would you like to overwrite the output file?'
+      }, function(answers) {
+        console.log(answers);
+        if (answers.overwrite) {
+          writePackageJson();
+        }
+      });
+    } else {
+      writePackageJson();
+    }
+  });
+});

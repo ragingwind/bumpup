@@ -10,6 +10,7 @@ var semverDiff = require('semver-diff');
 var chalk = require('chalk');
 var npmlog = require('npmlog');
 
+// +TODO: create a packages object
 function gatherPackage (packageName) {
   var client = new NpmRegistryClient({log: npmlog});
   var uri = 'http://registry.npmjs.org/' + packageName;
@@ -39,29 +40,52 @@ function readPackages(input, readAsJSON) {
     try {
       var packages = {
         data: data,
-        deps: null,
-        raw: null
+        input: null,
+        pkgs: {},
+        type: 'json'
       };
+      var semverRegex = /\d*\.\d*\.\d*/;
 
       if (readAsJSON) {
-        packages.raw = JSON.parse(data);
-        packages.deps = _.merge(packages.raw.dependencies, packages.raw.devDependencies);
-      } else {
-        var r = {
-          deps: /(devDependencies|dependencies)([^]*)},/gi,
-          pkg: /\"([\w\d-]*)\"\W*:\W\"([\d.^<>=~]*)\"/gi
+        var appendPackage = function(pkgs, json, deptype) {
+          _.forEach(json[deptype], function(current, name) {
+            pkgs[name] = {
+              name: name,
+              deptype: deptype,
+              currentOrigin: current,
+              current: semverRegex.exec(current)[0]
+            };
+          });
         };
 
-        var deps = r.deps.exec(data);
-        var res;
+        var json = JSON.parse(data);
 
-        packages.raw = [];
+        appendPackage(packages.pkgs, json, 'dependencies');
+        appendPackage(packages.pkgs, json, 'devDependencies');
+      } else {
+        var appendPackage = function(pkgs, data, deptype) {
+          var r = {
+            dependencies: /(\"dependencies\")([^}]*)/gi,
+            devDependencies: /(\"devDependencies\")([^]*)},/gi,
+            pkg: /\"([\w\d-]*)\"\W*:\W\"([\d.^<>=~]*)\"/gi
+          };
+          var input = r[deptype].exec(data);
+          var res;
 
-        while ((res = r.pkg.exec(deps[0])) !== null) {
-          packages.raw.push(res[0]);
-        }
-        packages.deps = JSON.parse('{' + packages.raw.join(',') + '}');
-        console.log(packages.raw);
+          while ((res = r.pkg.exec(input)) !== null) {
+            pkgs[res[1]] = {
+              name: res[1],
+              deptype: deptype,
+              packageOrigin: res[0],
+              currentOrigin: res[2],
+              current: semverRegex.exec(res[2])[0]
+            };
+          };
+        };
+
+        packages.type = 'regex';
+        appendPackage(packages.pkgs, data, 'dependencies');
+        appendPackage(packages.pkgs, data, 'devDependencies');
       }
     } catch (e) {
       deferred.reject(e);
@@ -72,6 +96,26 @@ function readPackages(input, readAsJSON) {
 
   return deferred.promise;
 }
+
+// unclear arguments
+function updatePackages(packages) {
+  var output = packages.type === 'json' ? JSON.parse(packages.data) :
+                                         packages.data.toString();
+
+  _.forEach(packages.pkgs, function(p) {
+    if (p.updatable) {
+      if (packages.type === 'json') {
+        output[p.deptype][p.name] = p.latest;
+      } else {
+        var latest = p.currentOrigin.replace(p.current, p.latest);
+        var newPackage = p.packageOrigin.replace(p.currentOrigin, latest);
+        output = output.replace(p.packageOrigin, newPackage);
+      }
+    }
+  });
+
+  return packages.output = (packages.type === 'json') ? JSON.stringify(output, null, 2) : output;
+};
 
 module.exports = function (packageJson, opts, cb) {
   // set npm logging level
@@ -84,34 +128,35 @@ module.exports = function (packageJson, opts, cb) {
     var requests = [];
 
     // Gather each package information via npm
-    _.each(packages.deps, function(v, p) {
-      requests.push(gatherPackage(p));
+    _.each(packages.pkgs, function(p) {
+      requests.push(gatherPackage(p.name));
     });
 
+    // +TODO: separate tasks return promise
     q.all(requests).then(function(res) {
       packages.updates = {};
 
-      // Make a update list
+      // Update package information
       _.forEach(res, function(r) {
-        var current = /\d*\.\d*\.\d*/.exec(packages.deps[r.name])[0];
-        var latest = r['dist-tags'].latest;
-        var u = packages.updates[r.name] = {
-          current: current,
-          latest: latest,
-          updatable: semver.gt(latest, current),
-          difftype: semverDiff(current, latest)
-        };
+        var pkg = packages.pkgs[r.name];
+
+        pkg.latest = r['dist-tags'].latest;
+        pkg.updatable = semver.gt(pkg.latest, pkg.current);
+        pkg.difftype = semverDiff(pkg.current, pkg.latest);
 
         // Show what it has different version
         if (opts.verbose) {
-          console.log(chalk.green(u.name) + '@' + u.current,
-            u.updatable ? ['can be updated to', chalk.red.bold(u.latest),
-                            chalk.bold(u.difftype), 'version'].join(' ') : 'has no diff');
+          console.log(chalk.green(pkg.name) + '@' + pkg.current,
+            pkg.updatable ? ['can be updated to', chalk.red.bold(pkg.latest),
+                            chalk.bold(pkg.difftype), 'version'].join(' ') : 'has no diff');
         }
       });
 
-      // Confirm that approve a updating
-      cb();
+      // Update package.json
+      updatePackages(packages);
+
+      // and pass updated package.json to cb as plain text
+      cb(null, packages);
     }).catch(function(err) {
       console.error(err);
       cb(err);
