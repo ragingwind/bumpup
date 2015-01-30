@@ -1,6 +1,6 @@
 # bumpup [![Build Status](https://travis-ci.org/ragingwind/bumpup.svg?branch=master)](https://travis-ci.org/ragingwind/bumpup)
 
-> bump up all dependencies in package.json to recently or specific version
+> You can use for your npm packages or Yeoman package.json template that needed to bumpup version of dependences
 
 
 ## Install
@@ -15,14 +15,23 @@ $ npm install --save bumpup
 ```js
 var bumpup = require('bumpup');
 
-bumpup('package.json');
+bumpup('package.json', options, function(err, packages) {
+    // write or diff
+});
 ```
 
 ```sh
 # bump up to latest version
 bumpup package.json
+bumpup _package.json --regex --verbose
+bumpup package.json --output new-package.json
 ```
 
+## Options
+
+- regex: Specify how to parse the package.json by regex. if not set? reading by json is default
+- output: Output file name, If no file name, the package.json will be overwrite
+- verbose: Show what is going on
 
 ## License
 
