@@ -8,9 +8,10 @@ var path = require('path');
 var semver = require('semver');
 var semverDiff = require('semver-diff');
 var chalk = require('chalk');
+var npmlog = require('npmlog');
 
 function gatherPackage (packageName) {
-  var client = new NpmRegistryClient();
+  var client = new NpmRegistryClient({log: npmlog});
   var uri = 'http://registry.npmjs.org/' + packageName;
   var params = {
     timeout: 1000
@@ -26,7 +27,7 @@ function gatherPackage (packageName) {
   return deferred.promise;
 }
 
-function readPackages(input, readAsJson) {
+function readPackages(input, readAsJSON) {
   var deferred = q.defer();
 
   fs.readFile(path.resolve(input), function(err, data) {
@@ -42,7 +43,7 @@ function readPackages(input, readAsJson) {
         raw: null
       };
 
-      if (readAsJson) {
+      if (readAsJSON) {
         packages.raw = JSON.parse(data);
         packages.deps = _.merge(packages.raw.dependencies, packages.raw.devDependencies);
       } else {
@@ -60,7 +61,7 @@ function readPackages(input, readAsJson) {
           packages.raw.push(res[0]);
         }
         packages.deps = JSON.parse('{' + packages.raw.join(',') + '}');
-        console.log(packages.deps);
+        console.log(packages.raw);
       }
     } catch (e) {
       deferred.reject(e);
@@ -72,9 +73,14 @@ function readPackages(input, readAsJson) {
   return deferred.promise;
 }
 
-module.exports = function (opts, cb) {
+module.exports = function (packageJson, opts, cb) {
+  // set npm logging level
+  if (!opts.verbose) {
+    npmlog.level = 'silent';
+  }
+
   // Get a package list from json/template file
-  readPackages(opts.input, !opts.regex).then(function(packages) {
+  readPackages(packageJson, opts.regex === false).then(function(packages) {
     var requests = [];
 
     // Gather each package information via npm
@@ -83,27 +89,25 @@ module.exports = function (opts, cb) {
     });
 
     q.all(requests).then(function(res) {
-      var updates = [];
+      packages.updates = {};
 
       // Make a update list
       _.forEach(res, function(r) {
         var current = /\d*\.\d*\.\d*/.exec(packages.deps[r.name])[0];
         var latest = r['dist-tags'].latest;
-
-        var u = {
-          name: r.name,
+        var u = packages.updates[r.name] = {
           current: current,
           latest: latest,
           updatable: semver.gt(latest, current),
           difftype: semverDiff(current, latest)
-        }
-
-        updates.push(u);
+        };
 
         // Show what it has different version
-        console.log(chalk.green(u.name) + '@' + u.current,
-          u.updatable ? ['can be updated to', chalk.red.bold(u.latest),
-                          chalk.bold(u.difftype), 'version'].join(' ') : 'has no diff');
+        if (opts.verbose) {
+          console.log(chalk.green(u.name) + '@' + u.current,
+            u.updatable ? ['can be updated to', chalk.red.bold(u.latest),
+                            chalk.bold(u.difftype), 'version'].join(' ') : 'has no diff');
+        }
       });
 
       // Confirm that approve a updating

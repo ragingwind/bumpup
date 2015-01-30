@@ -6,12 +6,12 @@ var bumpup = require('./');
 describe('bumpup', function(done) {
   it('should return packages from common package.json', function(done) {
     var opts = {
-      input: './fixtures/package.json',
       regex: false,
-      output: null
+      output: null,
+      verbose: true
     };
 
-    bumpup(opts, function() {
+    bumpup('./fixtures/package.json', opts, function() {
       assert.ok(true);
       done();
     });
@@ -19,12 +19,12 @@ describe('bumpup', function(done) {
 
   it('should return packages from yeoman package.json template', function(done) {
     var opts = {
-      input: './fixtures/_package.json',
       regex: true,
-      output: null
+      output: null,
+      verbose: true
     };
 
-    bumpup(opts, function() {
+    bumpup('./fixtures/_package.json', opts, function() {
       assert.ok(true);
       done();
     });

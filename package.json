@@ -33,6 +33,7 @@
     "lodash": "^2.4.1",
     "meow": "^2.1.0",
     "npm-registry-client": "^5.0.0",
+    "npmlog": "^1.0.0",
     "semver": "^4.2.0",
     "semver-diff": "^2.0.0"
   },

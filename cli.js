@@ -8,11 +8,13 @@ var args = meow({
   help: [
       'Usage',
       '   bumpup package.json [OPTIONS]',
-      '   bumpup package.json --parse=regex'
+      '   bumpup package.json --regex --verbose',
+      '   bumpup package.json --output new-package.json'
       '',
       'Options',
-      '   --parse: Parse the package.json by `json` or `regex patter` `json` is default',
-      '   --output: Output file name, If no file name, the package.json will be overwrite'
+      '   --regex: Specify how to parse the package.json by regex. if not set? reading by json is default',
+      '   --output: Output file name, If no file name, the package.json will be overwrite',
+      '   --verbose: Show what is going on'
   ].join('\n')
 });
 
@@ -21,8 +23,4 @@ if (args.input.length === 0) {
   eixt(-1);
 }
 
-bumpup({
-  input: args.input[0],
-  regex: args.flags['parse'] ===  'regex' ? true : false,
-  output: args.flags['output']
-});
+bumpup(args.input[0], args.flags);
