@@ -32,7 +32,6 @@ bumpup(args.input[0], args.flags, function(err, packages) {
     fs.writeFileSync(outputFile, packages.output);
   };
 
-  console.log('file', outputFile);
   fs.exists(outputFile, function(exists) {
     if (exists) {
       inquirer.prompt({
@@ -40,7 +39,6 @@ bumpup(args.input[0], args.flags, function(err, packages) {
         name: 'overwrite',
         message: 'Would you like to overwrite the output file?'
       }, function(answers) {
-        console.log(answers);
         if (answers.overwrite) {
           writePackageJson();
         }
