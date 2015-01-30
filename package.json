@@ -1,6 +1,6 @@
 {
   "name": "bumpup",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "bumpup version of all dependencies in package.json to latest version",
   "license": "MIT",
   "repository": "ragingwind/bumpup",
