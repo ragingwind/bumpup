@@ -30,6 +30,7 @@
   ],
   "dependencies": {
     "chalk": "^0.5.1",
+    "diff": "^1.2.2",
     "inquirer": "^0.8.0",
     "lodash": "^2.4.1",
     "meow": "^2.1.0",

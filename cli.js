@@ -7,6 +7,8 @@ var bumpup = require('./bumpup');
 var inquirer = require("inquirer");
 var path = require('path');
 var fs = require('fs');
+var chalk = require('chalk');
+var jsdiff = require('diff');
 var args = meow({
   help: [
       'Usage',
@@ -28,6 +30,14 @@ if (args.input.length === 0) {
 
 bumpup(args.input[0], args.flags, function(err, packages) {
   var outputFile = path.resolve(args.flags.output ? args.flags.output : args.input[0]);
+
+  jsdiff.diffChars(packages.data.toString(), packages.output).forEach(function(part){
+    var color = part.added ? chalk.bgRed.bold : chalk.white;
+    if (!part.removed) {
+      process.stderr.write(color(part.value));
+    }
+  });
+
   var writePackageJson = function() {
     fs.writeFileSync(outputFile, packages.output);
   };
