@@ -8,28 +8,48 @@ var path = require('path');
 var semver = require('semver');
 var semverDiff = require('semver-diff');
 var chalk = require('chalk');
-var npmlog = require('npmlog');
+var async = require('async');
+var jsdiff = require('diff');
 
-// +TODO: create a packages object
-function gatherPackage (packageName) {
-  var client = new NpmRegistryClient({log: npmlog});
-  var uri = 'http://registry.npmjs.org/' + packageName;
-  var params = {
-    timeout: 1000
-  };
+var rx = {
+  semver: /\d*\.\d*\.\d*/,
+  pkg:  /\"([\w\d-]*)\"\W*:\W\"([\d.^<>=~]*)\"/gi,
+  tpl: /<%\s*(.*?)\s*%>/gi,
+  dep: function(name) {return new RegExp('(\"' + name + '\")([^}]*)', 'gi')}
+};
+
+// Dependency, it has own package information
+function Dependency(name, current, field) {
+  this.name = name;
+  this.current = current;
+  this.field = field;
+  this.latest = null;
+  return this;
+};
+
+Dependency.prototype.isUpdated = function() {
+  return !this.latest ? false : semver.gt(this.latest, rx.semver.exec(this.current)[0]);
+};
+
+Dependency.prototype.diffVersion = function() {
+  return !this.latest ? 'none' : semverDiff(rx.semver.exec(this.current)[0], this.latest);
+};
+
+// Manger for Dependencies, manage, write and logging
+function Dependencies(opts) {
+  this.npmClient = new NpmRegistryClient();
+  this.deps = {};
+  this.output = null;
+  this.content = null;
+
+  if (!opts.verbose) {
+    this.npmClient.log.level = 'silent';
+  }
+};
+
+Dependencies.prototype.read = function(input) {
   var deferred = q.defer();
-  client.get(uri, params, function(err, data, raw, res) {
-    if (err) {
-      return deferred.reject(err);
-    }
-
-    deferred.resolve(data);
-  });
-  return deferred.promise;
-}
-
-function readPackages(input, readAsJSON) {
-  var deferred = q.defer();
+  var _this = this;
 
   fs.readFile(path.resolve(input), function(err, data) {
     if (err) {
@@ -38,128 +58,104 @@ function readPackages(input, readAsJSON) {
     }
 
     try {
-      var packages = {
-        data: data,
-        input: null,
-        pkgs: {},
-        type: 'json'
-      };
-      var semverRegex = /\d*\.\d*\.\d*/;
+      var content = _this.content = data.toString();
 
-      if (readAsJSON) {
-        var appendPackage = function(pkgs, json, deptype) {
-          _.forEach(json[deptype], function(current, name) {
-            pkgs[name] = {
-              name: name,
-              deptype: deptype,
-              currentOrigin: current,
-              current: semverRegex.exec(current)[0]
-            };
-          });
-        };
-
-        var json = JSON.parse(data);
-
-        appendPackage(packages.pkgs, json, 'dependencies');
-        appendPackage(packages.pkgs, json, 'devDependencies');
-      } else {
-        var appendPackage = function(pkgs, data, deptype) {
-          var r = {
-            dependencies: /(\"dependencies\")([^}]*)/gi,
-            devDependencies: /(\"devDependencies\")([^]*)},/gi,
-            pkg: /\"([\w\d-]*)\"\W*:\W\"([\d.^<>=~]*)\"/gi
-          };
-          var input = r[deptype].exec(data);
-          var res;
-
-          while ((res = r.pkg.exec(input)) !== null) {
-            pkgs[res[1]] = {
-              name: res[1],
-              deptype: deptype,
-              packageOrigin: res[0],
-              currentOrigin: res[2],
-              current: semverRegex.exec(res[2])[0]
-            };
-          };
-        };
-
-        packages.type = 'regex';
-        appendPackage(packages.pkgs, data, 'dependencies');
-        appendPackage(packages.pkgs, data, 'devDependencies');
+      // remove underscore template code if template code exists.
+      if (rx.tpl.test(content)) {
+        content = content.replace(rx.tpl, '');
       }
+
+      // extract dependencies field and value
+      var depFields = ['dependencies', 'devDependencies'];
+
+      _.forEach(depFields, function(d) {
+        var depsContent = rx.dep(d).exec(content);
+        var res = null;
+
+        while ((res = rx.pkg.exec(depsContent)) !== null) {
+          // Create a dependency with name, current and field string
+          _this.deps[res[1]] = new Dependency(res[1], res[2], res[0]);
+        };
+      });
+
+      deferred.resolve();
     } catch (e) {
       deferred.reject(e);
     }
-
-    deferred.resolve(packages);
   });
 
   return deferred.promise;
-}
-
-// unclear arguments
-function updatePackages(packages) {
-  var output = packages.type === 'json' ? JSON.parse(packages.data) :
-                                         packages.data.toString();
-
-  _.forEach(packages.pkgs, function(p) {
-    if (p.updatable) {
-      if (packages.type === 'json') {
-        output[p.deptype][p.name] = p.latest;
-      } else {
-        var latest = p.currentOrigin.replace(p.current, p.latest);
-        var newPackage = p.packageOrigin.replace(p.currentOrigin, latest);
-        output = output.replace(p.packageOrigin, newPackage);
-      }
-    }
-  });
-
-  return packages.output = (packages.type === 'json') ? JSON.stringify(output, null, 2) : output;
 };
 
-module.exports = function (packageJson, opts, cb) {
-  // set npm logging level
-  if (!opts.verbose) {
-    npmlog.level = 'silent';
-  }
+Dependencies.prototype.update = function(input) {
+  var deferred = q.defer();
+  var _this = this;
 
-  // Get a package list from json/template file
-  readPackages(packageJson, opts.regex === false).then(function(packages) {
-    var requests = [];
+  async.map(_.pluck(_this.deps, 'name'), function(p, cb) {
+    var params = {
+      timeout: 1000
+    };
+    _this.npmClient.get('http://registry.npmjs.org/' + p, params, cb);
+  }, function(err, res) {
+    if (err) {
+      deferred.reject(err);
+      return;
+    }
 
-    // Gather each package information via npm
-    _.each(packages.pkgs, function(p) {
-      requests.push(gatherPackage(p.name));
+    // Update latest version of packages
+    _.forEach(res, function(r) {
+      _this.deps[r.name].latest = r['dist-tags'].latest;
     });
 
-    // +TODO: separate tasks return promise
-    q.all(requests).then(function(res) {
-      packages.updates = {};
+    // Generate content based on latest version
+    _this.output = _this.content;
 
-      // Update package information
-      _.forEach(res, function(r) {
-        var pkg = packages.pkgs[r.name];
+    _.forEach(_this.deps, function(d) {
+      if (d.isUpdated()) {
+        var latest = d.field.replace(rx.semver.exec(d.current)[0], d.latest);
+        _this.output = _this.output.replace(d.field, latest);
+      }
+    });
 
-        pkg.latest = r['dist-tags'].latest;
-        pkg.updatable = semver.gt(pkg.latest, pkg.current);
-        pkg.difftype = semverDiff(pkg.current, pkg.latest);
-
-        // Show what it has different version
-        if (opts.verbose) {
-          console.log(chalk.green(pkg.name) + '@' + pkg.current,
-            pkg.updatable ? ['can be updated to', chalk.red.bold(pkg.latest),
-                            chalk.bold(pkg.difftype), 'version'].join(' ') : 'has no diff');
-        }
-      });
-
-      // Update package.json
-      updatePackages(packages);
-
-      // and pass updated package.json to cb as plain text
-      cb(null, packages);
-    }).catch(function(err) {
-      console.error(err);
-      cb(err);
-    });;
+    deferred.resolve();
   });
-}
+
+  return deferred.promise;
+};
+
+Dependencies.prototype.diff = function() {
+  var diff = '';
+  jsdiff.diffChars(this.content, this.output).forEach(function(part){
+    var color = part.added ? chalk.bgRed.bold : chalk.white;
+    if (!part.removed) {
+      diff += color(part.value);
+    }
+  });
+  return diff;
+};
+
+Dependencies.prototype.changes = function() {
+  var changes = [];
+  _.forEach(this.deps, function(d) {
+     changes.push(chalk.green(d.name) + '@' + rx.semver.exec(d.current)[0] +
+          (d.isUpdated() ? [
+            'can be updated to',
+            chalk.red.bold(d.latest),
+            chalk.bold(d.diffVersion()),
+            'version'
+          ].join(' ') : ' has no different versions'));
+  });
+  return changes;
+};
+
+module.exports = function (input, opts, cb) {
+  var deps = new Dependencies(opts);
+
+  deps.read(input).then(function() {
+    return deps.update().then(function(res) {
+      cb(null, deps);
+    });
+  }).catch(function(err) {
+    cb(err);
+  });
+};

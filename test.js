@@ -12,9 +12,9 @@ describe('bumpup', function(done) {
       verbose: true
     };
 
-    bumpup('./fixtures/package.json', opts, function(err, packages) {
+    bumpup('./fixtures/package.json', opts, function(err, deps) {
       assert(!err);
-      assert(_.size(packages.pkgs) === 5);
+      assert(_.size(deps.deps) === 5);
       done();
     });
   });
@@ -26,9 +26,9 @@ describe('bumpup', function(done) {
       verbose: true
     };
 
-    bumpup('./fixtures/_package.json', opts, function(err, packages) {
+    bumpup('./fixtures/_package.json', opts, function(err, deps) {
       assert(!err);
-      assert(_.size(packages.pkgs) === 27);
+      assert(_.size(deps.deps) === 27);
       done();
     });
   });

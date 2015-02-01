@@ -8,7 +8,7 @@ var inquirer = require("inquirer");
 var path = require('path');
 var fs = require('fs');
 var chalk = require('chalk');
-var jsdiff = require('diff');
+
 var args = meow({
   help: [
       'Usage',
@@ -17,10 +17,16 @@ var args = meow({
       '   bumpup package.json --output new-package.json',
       '',
       'Options',
-      '   --regex: Specify how to parse the package.json by regex. if not set? reading by json is default',
       '   --output: Output file name, If no file name, the package.json will be overwrite',
+      '   --diff: Show what packages are changed',
       '   --verbose: Show what is going on'
   ].join('\n')
+}, {
+  default: {
+    output: null,
+    diff: false,
+    verbose: false
+  }
 });
 
 if (args.input.length === 0) {
@@ -28,36 +34,36 @@ if (args.input.length === 0) {
   eixt(-1);
 }
 
-bumpup(args.input[0], args.flags, function(err, packages) {
-  var outputFile = path.resolve(args.flags.output ? args.flags.output : args.input[0]);
+bumpup(args.input[0], args.flags, function(err, deps) {
+  var output = path.resolve(args.flags.output ? args.flags.output : args.input[0]);
 
-  // Show what is changed in red color
-  if (args.flags.verbose) {
-    jsdiff.diffChars(packages.data.toString(), packages.output).forEach(function(part){
-      var color = part.added ? chalk.bgRed.bold : chalk.white;
-      if (!part.removed) {
-        process.stderr.write(color(part.value));
-      }
-    });
+  if (err) {
+    console.log('bumpup got an error', err);
+    eixt(-1);
   }
 
-  var writePackageJson = function() {
-    fs.writeFileSync(outputFile, packages.output);
-  };
+  // Show what packages are changed
+  if (args.flags.verbose) {
+    console.log(deps.changes().join('\n'));
+  }
 
-  fs.exists(outputFile, function(exists) {
-    if (exists) {
-      inquirer.prompt({
-        type: 'confirm',
-        name: 'overwrite',
-        message: 'Would you like to overwrite the output file?'
-      }, function(answers) {
-        if (answers.overwrite) {
-          writePackageJson();
-        }
-      });
-    } else {
-      writePackageJson();
-    }
-  });
+  // Show what is changed in red color
+  if (args.flags.diff) {
+    process.stderr.write(deps.diff());
+  }
+
+  // Write a file updated
+  if (fs.existsSync(output)) {
+    inquirer.prompt({
+      type: 'confirm',
+      name: 'overwrite',
+      message: 'The output file already exists. Overwrite?'
+    }, function(answers) {
+      if (answers.overwrite) {
+        fs.writeFileSync(output, deps.content);
+      }
+    });
+  } else {
+    fs.writeFileSync(output, deps.content);
+  }
 });
