@@ -20,7 +20,8 @@
     "test": "mocha --timeout 10000"
   },
   "files": [
-    "index.js"
+    "index.js",
+    "cli.js"
   ],
   "keywords": [
     "bumpup",
