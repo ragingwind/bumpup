@@ -60,10 +60,10 @@ bumpup(args.input[0], args.flags, function(err, deps) {
       message: 'The output file already exists. Overwrite?'
     }, function(answers) {
       if (answers.overwrite) {
-        fs.writeFileSync(output, deps.content);
+        fs.writeFileSync(output, deps.output);
       }
     });
   } else {
-    fs.writeFileSync(output, deps.content);
+    fs.writeFileSync(output, deps.output);
   }
 });
