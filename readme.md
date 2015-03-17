@@ -1,7 +1,6 @@
-# bumpup [![Build Status](https://travis-ci.org/ragingwind/bumpup.svg?branch=master)](https://travis-ci.org/ragingwind/bumpup)
+# bumpup
 
 > You can use for your npm packages or Yeoman package.json template that needed to bumpup version of dependences
-
 
 ## Install
 
@@ -29,8 +28,8 @@ bumpup package.json --output new-package.json
 
 ## Options
 
-- regex: Specify how to parse the package.json by regex. if not set? reading by json is default
-- output: Output file name, If no file name, the package.json will be overwrite
+- regex: Choose the way of parse the package.json. json is default
+- output: Output file name, If given no filename for output then source file will be overwritten
 - verbose: Show what is going on
 
 ## License
