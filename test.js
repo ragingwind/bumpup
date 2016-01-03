@@ -1,35 +1,33 @@
 'use strict';
 
-var assert = require('assert');
-var bumpup = require('./');
-var _  = require('lodash');
+import test from 'ava';
+import bumpup from './';
+import _ from 'lodash';
 
-describe('bumpup', function(done) {
-  it('should return packages from package.json', function(done) {
-    var opts = {
-      regex: false,
-      output: null,
-      verbose: true
-    };
+test('should return packages from package.json', t => {
+  var opts = {
+    regex: false,
+    output: null,
+    verbose: true
+  };
 
-    bumpup('./fixtures/package.json', opts, function(err, deps) {
-      assert(!err);
-      assert(_.size(deps.deps) === 5);
-      done();
-    });
+  bumpup('./fixtures/package.json', opts, function (err, deps) {
+    t.ok(!err);
+    t.ok(_.size(deps.deps) === 5);
+    t.end();
   });
+});
 
-  it('should return packages from package.json yeoman template', function(done) {
-    var opts = {
-      regex: true,
-      output: null,
-      verbose: true
-    };
+test('should return packages from package.json yeoman template', t => {
+  var opts = {
+    regex: true,
+    output: null,
+    verbose: true
+  };
 
-    bumpup('./fixtures/_package.json', opts, function(err, deps) {
-      assert(!err);
-      assert(_.size(deps.deps) === 27);
-      done();
-    });
+  bumpup('./fixtures/_package.json', opts, function (err, deps) {
+    t.ok(!err);
+    t.ok(_.size(deps.deps) === 27);
+    t.end();
   });
 });

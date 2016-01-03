@@ -1,7 +1,7 @@
 'use strict';
 
-var _  = require('lodash');
-var NpmRegistryClient = require('npm-registry-client')
+var _ = require('lodash');
+var NpmRegistryClient = require('npm-registry-client');
 var q = require('q');
 var fs = require('fs');
 var path = require('path');
@@ -13,9 +13,11 @@ var jsdiff = require('diff');
 
 var rx = {
   semver: /\d*\.\d*\.\d*/,
-  pkg:  /\"([\w\d-]*)\"\W*:\W\"([\d.^<>=~]*)\"/gi,
+  pkg: /\"([\w\d-]*)\"\W*:\W\"([\d.^<>=~]*)\"/gi,
   tpl: /<%\s*(.*?)\s*%>/gi,
-  dep: function(name) {return new RegExp('(\"' + name + '\")([^}]*)', 'gi')}
+  dep: function (name) {
+    return new RegExp('(\"' + name + '\")([^}]*)', 'gi');
+  }
 };
 
 // Dependency, it has own package information
@@ -25,14 +27,14 @@ function Dependency(name, current, field) {
   this.field = field;
   this.latest = null;
   return this;
+}
+
+Dependency.prototype.isUpdated = function () {
+  return this.latest ? semver.gt(this.latest, rx.semver.exec(this.current)[0]) : false;
 };
 
-Dependency.prototype.isUpdated = function() {
-  return !this.latest ? false : semver.gt(this.latest, rx.semver.exec(this.current)[0]);
-};
-
-Dependency.prototype.diffVersion = function() {
-  return !this.latest ? 'none' : semverDiff(rx.semver.exec(this.current)[0], this.latest);
+Dependency.prototype.diffVersion = function () {
+  return this.latest ? semverDiff(rx.semver.exec(this.current)[0], this.latest) : 'none';
 };
 
 // Manger for Dependencies, manage, write and logging
@@ -45,13 +47,13 @@ function Dependencies(opts) {
   if (!opts.verbose) {
     this.npmClient.log.level = 'silent';
   }
-};
+}
 
-Dependencies.prototype.read = function(input) {
+Dependencies.prototype.read = function (input) {
   var deferred = q.defer();
   var _this = this;
 
-  fs.readFile(path.resolve(input), function(err, data) {
+  fs.readFile(path.resolve(input), function (err, data) {
     if (err) {
       deferred.reject(err);
       return;
@@ -68,14 +70,14 @@ Dependencies.prototype.read = function(input) {
       // extract dependencies field and value
       var depFields = ['dependencies', 'devDependencies'];
 
-      _.forEach(depFields, function(d) {
+      _.forEach(depFields, function (d) {
         var depsContent = rx.dep(d).exec(content);
         var res = null;
 
         while ((res = rx.pkg.exec(depsContent)) !== null) {
           // Create a dependency with name, current and field string
           _this.deps[res[1]] = new Dependency(res[1], res[2], res[0]);
-        };
+        }
       });
 
       deferred.resolve();
@@ -87,30 +89,30 @@ Dependencies.prototype.read = function(input) {
   return deferred.promise;
 };
 
-Dependencies.prototype.update = function(input) {
+Dependencies.prototype.update = function () {
   var deferred = q.defer();
   var _this = this;
 
-  async.map(_.pluck(_this.deps, 'name'), function(p, cb) {
+  async.map(_.pluck(_this.deps, 'name'), function (p, cb) {
     var params = {
       timeout: 1000
     };
     _this.npmClient.get('http://registry.npmjs.org/' + p, params, cb);
-  }, function(err, res) {
+  }, function (err, res) {
     if (err) {
       deferred.reject(err);
       return;
     }
 
     // Update latest version of packages
-    _.forEach(res, function(r) {
+    _.forEach(res, function (r) {
       _this.deps[r.name].latest = r['dist-tags'].latest;
     });
 
     // Generate content based on latest version
     _this.output = _this.content;
 
-    _.forEach(_this.deps, function(d) {
+    _.forEach(_this.deps, function (d) {
       if (d.isUpdated()) {
         var latest = d.field.replace(rx.semver.exec(d.current)[0], d.latest);
         _this.output = _this.output.replace(d.field, latest);
@@ -123,9 +125,9 @@ Dependencies.prototype.update = function(input) {
   return deferred.promise;
 };
 
-Dependencies.prototype.diff = function() {
+Dependencies.prototype.diff = function () {
   var diff = '';
-  jsdiff.diffChars(this.content, this.output).forEach(function(part){
+  jsdiff.diffChars(this.content, this.output).forEach(function (part) {
     var color = part.added ? chalk.bgRed.bold : chalk.white;
     if (!part.removed) {
       diff += color(part.value);
@@ -134,10 +136,10 @@ Dependencies.prototype.diff = function() {
   return diff;
 };
 
-Dependencies.prototype.changes = function() {
+Dependencies.prototype.changes = function () {
   var changes = [];
-  _.forEach(this.deps, function(d) {
-     changes.push(chalk.green(d.name) + '@' + rx.semver.exec(d.current)[0] +
+  _.forEach(this.deps, function (d) {
+    changes.push(chalk.green(d.name) + '@' + rx.semver.exec(d.current)[0] +
           (d.isUpdated() ? [
             'can be updated to',
             chalk.red.bold(d.latest),
@@ -151,11 +153,11 @@ Dependencies.prototype.changes = function() {
 module.exports = function (input, opts, cb) {
   var deps = new Dependencies(opts);
 
-  deps.read(input).then(function() {
-    return deps.update().then(function(res) {
+  deps.read(input).then(function () {
+    return deps.update().then(function () {
       cb(null, deps);
     });
-  }).catch(function(err) {
+  }).catch(function (err) {
     cb(err);
   });
 };

@@ -4,22 +4,21 @@
 
 var meow = require('meow');
 var bumpup = require('./bumpup');
-var inquirer = require("inquirer");
+var inquirer = require('inquirer');
 var path = require('path');
 var fs = require('fs');
-var chalk = require('chalk');
 
-var args = meow({
+var cli = meow({
   help: [
-      'Usage',
-      '   bumpup package.json [OPTIONS]',
-      '   bumpup package.json --regex --verbose',
-      '   bumpup package.json --output new-package.json',
-      '',
-      'Options',
-      '   --output: Output file name, If no file name, the package.json will be overwrite',
-      '   --diff: Show what packages are changed',
-      '   --verbose: Show what is going on'
+    'Usage',
+    '   bumpup package.json [OPTIONS]',
+    '   bumpup package.json --regex --verbose',
+    '   bumpup package.json --output new-package.json',
+    '',
+    'Options',
+    '   --output: Output file name, If no file name, the package.json will be overwrite',
+    '   --diff: Show what packages are changed',
+    '   --verbose: Show what is going on'
   ].join('\n')
 }, {
   default: {
@@ -29,26 +28,25 @@ var args = meow({
   }
 });
 
-if (args.input.length === 0) {
-  args.showHelp();
-  eixt(-1);
+if (cli.input.length === 0) {
+  cli.showHelp(-1);
 }
 
-bumpup(args.input[0], args.flags, function(err, deps) {
-  var output = path.resolve(args.flags.output ? args.flags.output : args.input[0]);
+bumpup(cli.input[0], cli.flags, function (err, deps) {
+  var output = path.resolve(cli.flags.output ? cli.flags.output : cli.input[0]);
 
   if (err) {
     console.log('bumpup got an error', err);
-    eixt(-1);
+    process.exit(-1);
   }
 
   // Show what packages are changed
-  if (args.flags.verbose) {
+  if (cli.flags.verbose) {
     console.log(deps.changes().join('\n'));
   }
 
   // Show what is changed in red color
-  if (args.flags.diff) {
+  if (cli.flags.diff) {
     process.stderr.write(deps.diff());
   }
 
@@ -58,7 +56,7 @@ bumpup(args.input[0], args.flags, function(err, deps) {
       type: 'confirm',
       name: 'overwrite',
       message: 'The output file already exists. Overwrite?'
-    }, function(answers) {
+    }, function (answers) {
       if (answers.overwrite) {
         fs.writeFileSync(output, deps.output);
       }
