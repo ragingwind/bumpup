@@ -1,10 +1,10 @@
 'use strict';
 
+var fs = require('fs');
+var path = require('path');
 var _ = require('lodash');
 var NpmRegistryClient = require('npm-registry-client');
 var q = require('q');
-var fs = require('fs');
-var path = require('path');
 var semver = require('semver');
 var semverDiff = require('semver-diff');
 var chalk = require('chalk');
@@ -13,10 +13,10 @@ var jsdiff = require('diff');
 
 var rx = {
   semver: /\d*\.\d*\.\d*/,
-  pkg: /\"([\w\d-]*)\"\W*:\W\"([\d.^<>=~]*)\"/gi,
+  pkg: /\\"([\w\d-]*)\\"\W*:\W\\"([\d.^<>=~]*)\\"/gi,
   tpl: /<%\s*(.*?)\s*%>/gi,
   dep: function (name) {
-    return new RegExp('(\"' + name + '\")([^}]*)', 'gi');
+    return new RegExp('(\\"' + name + '\\")([^}]*)', 'gi');
   }
 };
 
@@ -81,8 +81,8 @@ Dependencies.prototype.read = function (input) {
       });
 
       deferred.resolve();
-    } catch (e) {
-      deferred.reject(e);
+    } catch (err) {
+      deferred.reject(err);
     }
   });
 

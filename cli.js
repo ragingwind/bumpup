@@ -2,11 +2,11 @@
 
 'use strict';
 
-var meow = require('meow');
-var bumpup = require('./bumpup');
-var inquirer = require('inquirer');
 var path = require('path');
 var fs = require('fs');
+var meow = require('meow');
+var inquirer = require('inquirer');
+var bumpup = require('./bumpup');
 
 var cli = meow({
   help: [

@@ -1,8 +1,8 @@
 'use strict';
 
 import test from 'ava';
-import bumpup from './';
 import _ from 'lodash';
+import bumpup from './';
 
 test('should return packages from package.json', t => {
   var opts = {
@@ -12,9 +12,8 @@ test('should return packages from package.json', t => {
   };
 
   bumpup('./fixtures/package.json', opts, function (err, deps) {
-    t.ok(!err);
-    t.ok(_.size(deps.deps) === 5);
-    t.end();
+    t.true(!err);
+    t.true(_.size(deps.deps) === 5);
   });
 });
 
@@ -26,8 +25,7 @@ test('should return packages from package.json yeoman template', t => {
   };
 
   bumpup('./fixtures/_package.json', opts, function (err, deps) {
-    t.ok(!err);
-    t.ok(_.size(deps.deps) === 27);
-    t.end();
+    t.true(!err);
+    t.true(_.size(deps.deps) === 27);
   });
 });
