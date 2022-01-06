@@ -4,20 +4,17 @@
   "description": "bumpup version of all dependencies in package.json to latest version",
   "license": "MIT",
   "repository": "ragingwind/bumpup",
-  "author": {
-    "name": "Jimmy Moon",
-    "email": "ragingwind@gmail.com",
-    "url": "ragingwind.com"
-  },
+  "author": "Jimmy Moon <ragingwind@gmail.com>",
+  "type": "module",
   "engines": {
-    "node": ">=0.10.0"
+    "node": ">=0.12.0"
   },
   "main": "bumpup.js",
   "bin": {
     "bumpup": "cli.js"
   },
   "scripts": {
-    "test": "xo && nyc ava"
+    "test": "ava"
   },
   "files": [
     "bumpup.js",
@@ -44,10 +41,13 @@
     "semver-diff": "^2.1.0"
   },
   "devDependencies": {
-    "ava": "^0.17.0",
+    "@ava/typescript": "^3.0.1",
+    "ava": "^4.0.0",
     "coveralls": "^2.11.15",
     "nyc": "^10.0.0",
-    "xo": "^0.17.1"
+    "ts-node": "^10.4.0",
+    "typescript": "^4.5.4",
+    "xo": "^0.47.0"
   },
   "xo": {
     "space": 2

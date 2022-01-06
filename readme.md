@@ -6,6 +6,8 @@
 
 ```sh
 $ npm install --save bumpup
+
+$ yarn add bumpup
 ```
 
 
@@ -36,4 +38,4 @@ bumpup package.json --output new-package.json
 
 ## License
 
-MIT © [ragingwind](http://ragingwind.me)
+MIT © Jimmy Moon
