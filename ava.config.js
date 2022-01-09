@@ -1,12 +1,13 @@
 export default {
   extensions: {
-    ts: "module"
+    ts: 'module'
   },
   nodeArguments: [
-    "--loader=ts-node/esm",
-    "--experimental-specifier-resolution=node"
+    '--no-warnings',
+    '--loader=ts-node/esm',
+    '--experimental-specifier-resolution=node'
   ],
   files: [
-    "test/**/*.ts"
+    'test/**/*.ts'
   ]
 };

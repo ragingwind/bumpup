@@ -1,6 +1,10 @@
 {
+  "extends": "@ragingwind/tsconfig/tsconfig.json",
   "compilerOptions": {
-    "module": "ES2020",
-    "moduleResolution": "node"
-  }
+    "outDir": "dist"
+  },
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts"
+  ]
 }
