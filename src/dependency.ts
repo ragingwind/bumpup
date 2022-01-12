@@ -1,10 +1,9 @@
 import { readFileSync } from 'fs';
-// import NpmRegistryClient from "npm-registry-client";
-
 import semver from 'semver';
 import semverDiff from 'semver-diff';
 // @ts-ignore: no @type for this
-import { semverRegex, pkgRegex } from './regex';
+import NpmRegistryClient from 'npm-registry-client';
+import { semverRegex } from './regex';
 
 class Package {
   constructor(public name: string, public version: string, public field: string, public latest: string | null) {}
@@ -18,20 +17,57 @@ class Package {
   }
 }
 
-function pkgToDep(pkg: any, field: string) {
-  return Object.entries(pkg).map(([name, version]) => new Package(name, version as string, field, null));
+function migrateToPackage(pkg: any, field: string) {
+  return Object.entries(pkg).reduce((packages, [name, version]) => {
+    packages[name] = new Package(name, version as string, field, null);
+    return packages;
+  }, {} as any);
 }
 
 class Dependency {
-  // private npmClient = new NpmRegistryClient();
+  private npmClient = new NpmRegistryClient();
+
+  constructor() {
+    this.npmClient.log.level = 'silent';
+  }
 
   async read(pkgPath: string) {
     try {
       const { dependencies, devDependencies } = JSON.parse(readFileSync(pkgPath).toString());
-      return [...pkgToDep(dependencies, 'dependencies'), ...pkgToDep(devDependencies, 'devDependencies')];
+      return Object.assign(
+        {},
+        migrateToPackage(dependencies, 'dependencies'),
+        migrateToPackage(devDependencies, 'devDependencies')
+      );
     } catch (e) {}
 
     return [];
+  }
+
+  async requestNpmInfo(pkgName: string) {
+    return new Promise((resolve, reject) => {
+      this.npmClient.get(
+        `http://registry.npmjs.org/${pkgName}`,
+        {
+          timeout: 5000,
+        },
+        (err: any, res: unknown) => (err ? reject() : resolve(res))
+      );
+    });
+  }
+
+  async bumpup(pkgPath: string) {
+    const packages = await this.read(pkgPath);
+    const packageNames = Object.keys(packages);
+    if (packageNames.length > 0) {
+      const npmPackages = await Promise.all(packageNames.map((pkgName) => this.requestNpmInfo(pkgName)));
+
+      for (const npmPkg of npmPackages as any) {
+        packages[npmPkg.name].latest = npmPkg['dist-tags']?.latest;
+      }
+
+      console.log(packages);
+    }
   }
 }
 
