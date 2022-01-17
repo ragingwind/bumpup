@@ -8,15 +8,20 @@ import Dependency from '../src/dependency';
 
 test('Should return packages in package.json', async (t) => {
   const d = new Dependency();
-  const packages = await d.read(resolve('../fixtures/package.json'));
+  const deps = await d.read(resolve('../fixtures/package.json'));
 
-  t.true(Object.keys(packages).length > 0);
+  t.true(Object.keys(deps).length > 0);
 
-  for (const name in packages) {
-    const p = packages[name];
-    t.true(p.name.length > 0);
-    t.true(p.version.length > 0);
-    t.true(p.field.length > 0);
+  for (const name in deps['dependencies']) {
+    const p = deps['dependencies'][name];
+
+    t.assert(p);
+
+    if (p) {
+      t.true(p.name.length > 0);
+      t.true(p.version.length > 0);
+      t.true(p.field.length > 0);
+    }
   }
 });
 
