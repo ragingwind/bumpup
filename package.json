@@ -1,6 +1,6 @@
 {
   "name": "bumpup",
-  "version": "1.1.0",
+  "version": "1.4.0",
   "description": "bumpup versions of dependencies in package.json with latest version",
   "license": "MIT",
   "repository": "ragingwind/bumpup",
@@ -14,10 +14,13 @@
   "bin": {
     "bumpup": "./dist/cli.js"
   },
+  "files": [
+    "dist/"
+  ],
   "scripts": {
     "dev": "tsc --watch",
     "test": "ava --verbose",
-    "cli": "node dist/cli.js ../package.json --diff --output package-cli-bumped.json",
+    "cli": "node dist/cli.js ./package.json --diff --output ./dist/package-cli-bumped.json",
     "build": "tsc -p tsconfig-build.json"
   },
   "keywords": [
@@ -28,11 +31,9 @@
     "version control"
   ],
   "dependencies": {
-    "inquirer": "^2.0.0",
     "json-diff": "^0.7.1",
     "meow": "^10.1.2",
     "npm-registry-client": "^8.6.0",
-    "prompt": "^1.0.0",
     "semver": "^7.3.5",
     "semver-diff": "^4.0.0"
   },

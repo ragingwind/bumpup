@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import path from 'path';
-import { fileURLToPath } from 'url';
 import meow from 'meow';
 import Bumpup from './bumpup.js';
 
@@ -38,7 +37,7 @@ if (cli.input.length === 0) {
   cli.showHelp(-1);
 }
 
-const resolve = (target: string) => path.resolve(path.dirname(fileURLToPath(import.meta.url)), target);
+const resolve = (target: string) => path.resolve(process.cwd(), target);
 
 const pkgName = resolve(cli.input[0] as string);
 const output = resolve(cli.flags.output ?? pkgName);
