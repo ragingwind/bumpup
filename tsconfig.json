@@ -1,0 +1,10 @@
+{
+  "extends": "@ragingwind/tsconfig/tsconfig.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "outDir": "dist"
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}

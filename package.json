@@ -1,28 +1,25 @@
 {
   "name": "bumpup",
-  "version": "0.1.4",
-  "description": "bumpup version of all dependencies in package.json to latest version",
+  "version": "1.0.0",
+  "description": "bumpup versions of dependencies in package.json with latest version",
   "license": "MIT",
   "repository": "ragingwind/bumpup",
-  "author": {
-    "name": "Jimmy Moon",
-    "email": "ragingwind@gmail.com",
-    "url": "ragingwind.com"
-  },
+  "author": "Jimmy Moon <ragingwind@gmail.com>",
+  "type": "module",
   "engines": {
-    "node": ">=0.10.0"
+    "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
   },
-  "main": "bumpup.js",
+  "main": "dist/bumpup.js",
+  "types": "dist/bumpup.d.ts",
   "bin": {
-    "bumpup": "cli.js"
+    "bumpup": "./dist/cli.js"
   },
   "scripts": {
-    "test": "xo && nyc ava"
+    "dev": "tsc --watch",
+    "test": "ava --verbose",
+    "cli": "node dist/cli.js ../package.json --diff --output package-cli-bumped.json",
+    "build": "tsc -p tsconfig-build.json"
   },
-  "files": [
-    "bumpup.js",
-    "cli.js"
-  ],
   "keywords": [
     "bumpup",
     "package",
@@ -31,25 +28,22 @@
     "version control"
   ],
   "dependencies": {
-    "async": "^2.1.4",
-    "chalk": "^1.1.3",
-    "diff": "^3.1.0",
     "inquirer": "^2.0.0",
-    "lodash": "^4.17.2",
-    "meow": "^3.7.0",
-    "npm-registry-client": "^7.4.5",
+    "json-diff": "^0.7.1",
+    "meow": "^10.1.2",
+    "npm-registry-client": "^8.6.0",
     "prompt": "^1.0.0",
-    "q": "^1.4.1",
-    "semver": "^5.3.0",
-    "semver-diff": "^2.1.0"
+    "semver": "^7.3.5",
+    "semver-diff": "^4.0.0"
   },
   "devDependencies": {
-    "ava": "^0.17.0",
-    "coveralls": "^2.11.15",
-    "nyc": "^10.0.0",
-    "xo": "^0.17.1"
-  },
-  "xo": {
-    "space": 2
+    "@ava/typescript": "^3.0.1",
+    "@ragingwind/tsconfig": "^1.1.0",
+    "@types/node": "^17.0.8",
+    "@types/semver": "^7.3.9",
+    "@typescript-eslint/eslint-plugin": "^5.9.0",
+    "@typescript-eslint/parser": "^5.9.0",
+    "ava": "^4.0.0",
+    "typescript": "^4.5.4"
   }
 }
