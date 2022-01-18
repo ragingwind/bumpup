@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import path from 'path';
 import { fileURLToPath } from 'url';
 import meow from 'meow';
@@ -43,43 +45,7 @@ const output = resolve(cli.flags.output ?? pkgName);
 const { diff, dryRun } = cli.flags;
 
 const bumpup = new Bumpup();
-await bumpup.bumpup(pkgName, output, { diff, dryRun });
 
-// const dest = d.readPackage(resolve('../fixtures/package-bumped.json'));
-
-// bumpup(cli.input[0], cli.flags, function (err, deps) {
-//   var output = path.resolve(cli.flags.output ? cli.flags.output : cli.input[0]);
-
-//   if (err) {
-//     console.log("bumpup got an error", err);
-//     process.exit(-1);
-//   }
-
-//   // Show what packages are changed
-//   if (cli.flags.verbose) {
-//     console.log(deps.changes().join("\n"));
-//   }
-
-//   // Show what is changed in red color
-//   if (cli.flags.diff) {
-//     process.stderr.write(deps.diff());
-//   }
-
-//   // Write a file updated
-//   if (fs.existsSync(output)) {
-//     inquirer.prompt(
-//       {
-//         type: "confirm",
-//         name: "overwrite",
-//         message: "The output file already exists. Overwrite?",
-//       },
-//       function (answers) {
-//         if (answers.overwrite) {
-//           fs.writeFileSync(output, deps.output);
-//         }
-//       }
-//     );
-//   } else {
-//     fs.writeFileSync(output, deps.output);
-//   }
-// });
+(async () => {
+  await bumpup.bumpup(pkgName, output, { diff, dryRun });
+})();
